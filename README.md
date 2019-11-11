@@ -17,7 +17,7 @@ This is a kernel level Linux Device driver to control a 16x2 character LCD (with
 | __int _lcd_put_char_(char c)__ | __Display character at current cursor position__ |
 | __void _lcd_put_string_(const char *s)__ | __Display string at current cursor position__ |
 | __void _lcd_gotoxy_(uint8_t x, uint8_t y)__ | __Set cursor to specified position__ |
-| __int _lcd_scrollLeft_(void)__ | __scroll text to left__ |
+| __void _lcd_scrollLeft_(void)__ | __scroll text to left__ |
 | __void _lcd_scrollRight_(void)__ | __scroll text to right__ |
-| __int _lcd_blink_(void)__ | __Set cursor to home position__ |
-| __int _lcd_set_backlight_(uint8_t status)__ | __Set on/off backlight__ |
+| __void _lcd_blink_(void)__ | __Set cursor to home position__ |
+| __void _lcd_set_backlight_(uint8_t status)__ | __Set on/off backlight__ |
