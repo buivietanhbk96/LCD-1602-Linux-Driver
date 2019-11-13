@@ -14,10 +14,10 @@
 #include<linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fcntl.h>
-#include <linux/gpio.h>  // linux gpio interface
+#include <linux/gpio.h>  /*linux gpio interface*/
 #include <linux/kdev_t.h>
 
-#include <linux/delay.h> // delay
+#include <linux/delay.h> /*delay*/
 #include "lcd_driver.h"
 
 #define DRIVER_AUTHOR "AnhBV-DiemPV"
@@ -32,7 +32,7 @@
 /************************Device Structures*******************************/
 
 #define CLASS_NAME  	"class_lcd"
-#define DEVICE_NAME 	"char_dev_lcd"
+#define DEVICE_NAME 	"lcd_1602"
 
 struct _lcd_driver
 {
@@ -110,60 +110,46 @@ static void lcd_pin_release_All( void )
     lcd_pin_release(LCD_D6_PIN_NUMBER);
     lcd_pin_release(LCD_D7_PIN_NUMBER);
 }
-
-/***********LCD send command*******************
- * Only 4 upper bit was used */
-static void lcd_send_command(char command)
-{
-    int db7_data = 0;
-    int db6_data = 0;
-    int db5_data = 0;
-    int db4_data = 0;
-
-    usleep_range(2000,3000);
-
-    /*Get 4 bit Upper*/
-    db7_data = ( (command)&(0x1 <<7) ) >> (7);
-    db6_data = ( (command)&(0x1 <<6) ) >> (6);
-    db5_data = ( (command)&(0x1 <<5) ) >> (5);
-    db4_data = ( (command)&(0x1 <<4) ) >> (4);
-
-    /*Set value to correspond GPIO*/
-    gpio_set_value(LCD_D7_PIN_NUMBER, db7_data);
-    gpio_set_value(LCD_D6_PIN_NUMBER, db6_data);
-    gpio_set_value(LCD_D5_PIN_NUMBER, db5_data);
-    gpio_set_value(LCD_D4_PIN_NUMBER, db4_data);
-
-   	/*Set to command mode*/
-	gpio_set_value(LCD_RS_PIN_NUMBER, RS_COMMAND_MODE);
-	usleep_range(5, 10);
-
-	// Simulate falling edge triggered clock
-	gpio_set_value(LCD_EN_PIN_NUMBER, 1);
-	usleep_range(5, 10);
-	gpio_set_value(LCD_EN_PIN_NUMBER, 0); 
-}
-/******************LCD send data************************************/
-static void lcd_send_data(char data)
+/********************LCD Nibble************************/
+static void lcd_nibble(char data)
 {
 	int db7_data = 0;
 	int db6_data = 0;
 	int db5_data = 0;
 	int db4_data = 0;
+	usleep_range(2000, 3000); /* added delay instead of busy checking */
+	/*Get 4 bit Upper*/
+	db7_data = ((data) & (0x01 << 7)) >> (7);
+	db6_data = ((data) & (0x01 << 6)) >> (6);
+	db5_data = ((data) & (0x01 << 5)) >> (5);
+	db4_data = ((data) & (0x01 << 4)) >> (4);
 
-	/*Part 1.  Upper 4 bit data (from bit 7 to bit 4)*/
-	usleep_range(2000, 3000); 	// added delay instead of busy checking
-
-	db7_data = ( (data)&(0x1 << 7) ) >> (7) ;
-	db6_data = ( (data)&(0x1 << 6) ) >> (6) ;
-	db5_data = ( (data)&(0x1 << 5) ) >> (5) ;
-	db4_data = ( (data)&(0x1 << 4) ) >> (4) ;
-
+	/*Set value to correspond GPIO*/
 	gpio_set_value(LCD_D7_PIN_NUMBER, db7_data);
 	gpio_set_value(LCD_D6_PIN_NUMBER, db6_data);
 	gpio_set_value(LCD_D5_PIN_NUMBER, db5_data);
 	gpio_set_value(LCD_D4_PIN_NUMBER, db4_data);
 
+}
+/***********LCD send command*******************
+ * Only 4 upper bit was used */
+static void lcd_send_command(char command)
+{
+	/*Send signal to Pin*/
+	lcd_nibble(command & 0xF0);
+	/*Set to command mode*/
+	gpio_set_value(LCD_RS_PIN_NUMBER, RS_COMMAND_MODE);
+	usleep_range(5, 10);
+	/* Simulate falling edge triggered clock */
+	gpio_set_value(LCD_EN_PIN_NUMBER, 1);
+	usleep_range(5, 10);
+	gpio_set_value(LCD_EN_PIN_NUMBER, 0);
+}
+/******************LCD send data************************************/
+static void lcd_send_data(char data)
+{
+	/*Part 1.  Upper 4 bit data (from bit 7 to bit 4)*/
+	lcd_nibble(data & 0xF0);
 	/*Part 1. Set to data mode*/
 	gpio_set_value(LCD_RS_PIN_NUMBER, RS_DATA_MODE);
 	usleep_range(5, 10);
@@ -173,20 +159,8 @@ static void lcd_send_data(char data)
 	usleep_range(5, 10);
 	gpio_set_value(LCD_EN_PIN_NUMBER, 0);	
 
-
 	/* Part 2. Lower 4 bit data (from bit 3 to bit 0)*/
-	usleep_range(2000, 3000);	/* added delay instead of busy checking*/
-
-	db7_data = ( (data)&(0x1 << 3) ) >> (3) ;
-	db6_data = ( (data)&(0x1 << 2) ) >> (2) ;
-	db5_data = ( (data)&(0x1 << 1) ) >> (1) ;
-	db4_data = ( (data)&(0x1)      )        ;
-
-	gpio_set_value(LCD_D7_PIN_NUMBER, db7_data);
-	gpio_set_value(LCD_D6_PIN_NUMBER, db6_data);
-	gpio_set_value(LCD_D5_PIN_NUMBER, db5_data);
-	gpio_set_value(LCD_D4_PIN_NUMBER, db4_data);
-
+	lcd_nibble((data & 0x0F) << 4);
 	/* Part 2. Set to data mode */
 	gpio_set_value(LCD_RS_PIN_NUMBER, RS_DATA_MODE);
     usleep_range(5, 10);
@@ -196,9 +170,8 @@ static void lcd_send_data(char data)
 	usleep_range(5, 10);
 	gpio_set_value(LCD_EN_PIN_NUMBER, 0);	
 }
-/****LCD init*****
- * description: 	initialize the LCD in 4 bit mode as described on the HD44780 LCD controller document.
-*/
+/************************LCD init******************************/
+/*description: 	initialize the LCD in 4 bit mode as described on the HD44780 LCD controller document.*/
 static void lcd_initialize()
 {
 	usleep_range(41*1000, 50*1000);	// wait for more than 40 ms once the power is on
@@ -212,8 +185,8 @@ static void lcd_initialize()
 	lcd_send_command(0x30);		// Instruction 0011b (Function set)
 	usleep_range(100,200);		// wait for more than 100 us
 
-	lcd_send_command(0x20);		/* Instruction 0010b (Function set)*/
-	/*Set interface to be 4 bits long*/
+	lcd_send_command(0x20);		/* Instruction 0010b (Function set)*/ /*Set interface to be 4 bits long*/
+	
     usleep_range(100, 200);     // wait for more than 100 us
 
     lcd_send_command(0x20); // Instruction 0010b (Function set)
@@ -266,21 +239,41 @@ static int lcd_print(char * msg, unsigned int lineNumber)
 		lineNum = 1;
 	}
 
-    lcd_setLinePosition(LCD_FIRST_LINE);
-
-    while (*(msg) != '\0')
-    {
-        if (counter >= NUM_CHAR_PER_LINE)
-        {
-            break;
-        }
-        lcd_send_data(*msg);
-        msg++;
-        counter++;
-    }
+    lcd_setLine(LCD_FIRST_LINE);
+	if (lineNum == 1)
+	{
+		lcd_setLine(LCD_FIRST_LINE);
+		while (*(msg) != '\0')
+		{
+			if (counter >= NUM_CHAR_PER_LINE)
+			{
+				lineNum = 2; // continue writing on the next line if the string is too long
+				counter = 0;
+				break;
+			}
+			lcd_send_data(*msg);
+			msg++;
+			counter++;
+		}
+	}
+	if (lineNum == 2)
+	{
+		lcd_setLine(LCD_SECOND_LINE);
+		while (*(msg) != '\0')
+		{
+			if (counter >= NUM_CHAR_PER_LINE)
+			{
+				break;
+			}
+			lcd_send_data(*msg);
+			msg++;
+			counter++;
+		}
+	}
+	return 0;
 }
-/*************************Set line current*********************************/
-void lcd_setLinePosition(unsigned int line)
+/*************************Set line to display *********************************/
+void lcd_setLine(unsigned int line)
 {
 	if(line == 1){
 		lcd_send_command(0x80);	/* set position to LCD line 1*/
@@ -299,14 +292,76 @@ void lcd_setLinePosition(unsigned int line)
 static void lcd_clearDisplay()
 {
     /*Send 0x01 command*/
-	lcd_send_command( 0x00 ); /*upper 4 bits of command*/
-	lcd_send_command( 0x10 ); /*lower 4 bits of command*/  
+	lcd_send_command( 0x00 ); /*upper 4 bits of command - 0000b */
+	lcd_send_command( 0x10 ); /*lower 4 bits of command - 0001b */  
 
-	printk(KERN_INFO "klcd Driver: display clear\n");
+	printk(KERN_INFO "LCD Driver: display clear\n");
 }
-/****LCD gotoxy*****/
-/****LCD visible cursor*****/
+/************************LCD Set cursor to position (x,y)*********************/
+static void lcd_gotoxy(unsigned char x, unsigned char y)
+{
+	char command;
 
+	if(1 == x){
+		command = 0x80 + (char) y;
+		
+		lcd_send_command(command & 0xF0); 	  // upper 4 bits of command
+		lcd_send_command((command & 0x0F) << 4); // lower 4 bits of command 
+	}
+	else if(2 == x){
+		command = 0xC0 + (char) y;
+
+		lcd_send_command(command & 0xF0); 	  // upper 4 bits of command
+		lcd_send_command((command & 0x0F) << 4 ); // lower 4 bits of command
+	}
+	else{
+		printk("ERR: Invalid line number. Select either 1 or 2 \n");
+	}	
+}
+/**********************LCD Set ON/OFF Blink********************************/
+static void lcd_set_blink(unsigned char status)
+{
+	/* Display On/off Control */
+	/* Instruction 1DCBb  */
+	/* Set D= 1, or Display on
+	   Set C= 1, or Cursor on
+	   Set B= 1, or Blinking on
+	*/
+	lcd_send_command(0x00);		/* Command 0000b */
+	if(0 == status)
+	{
+		lcd_send_command(0xE0); /* Command 1110b */ 
+	}
+	else if(1 == status)
+	{
+		lcd_send_command(0xF0); /* Command 1111b */
+	}
+	else{
+		printk("ERR: Invalid status. Select either 0 or 1 \n");
+	}	
+}
+/*********************LCD visible cursor***********************************/
+static void lcd_set_cursor(unsigned char status)
+{
+	/* Display On/off Control */
+	/* Instruction 1DCBb  */
+	/* Set D= 1, or Display on
+	   Set C= 1, or Cursor on
+	   Set B= 1, or Blinking on
+	*/
+	lcd_send_command(0x00);		/* Command 0000b */
+	if(0 == status)
+	{
+		lcd_send_command(0xD0); /* Command 1101b */ 
+	}
+	else if(1 == status)
+	{
+		lcd_send_command(0xF0); /* Command 1111b */
+	}
+	else{
+		printk("ERR: Invalid status. Select either 0 or 1 \n");
+	}	
+}
 /****************************Device Specific-END**************************/
 
 /****************************OS Specific-START************************/
@@ -323,11 +378,11 @@ static int char_lcd_release(struct inode *inode, struct file *filp)
     return 0;
 }
 /****Function read entry point*****/
+
 /****Function write entry point*****/
 static ssize_t char_lcd_write(struct file *filp, const char __user *user_buf, size_t len, loff_t *off)
 {
     char *kernel_buf = NULL;
-    int num_bytes = 0;
     if(NULL == user_buf)
     {
         printk(KERN_DEBUG "ERR: Empty user buffer\n");
@@ -345,16 +400,51 @@ static ssize_t char_lcd_write(struct file *filp, const char __user *user_buf, si
 	lcd_clearDisplay();
 
 	/*print on the first line by default*/
-	num_bytes = lcd_print(kernel_buf, LCD_FIRST_LINE);
-    *off += num_bytes;
-	printk(KERN_INFO "LCD Driver: write()\n");
+	lcd_print(kernel_buf, LCD_FIRST_LINE);
 	kfree(kernel_buf);
-    return num_bytes;
+	printk(KERN_INFO "LCD Driver: write()\n");
+    return len;
 }
 /****Function ioctl entry point*****/
+static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    int ret = 0;
+    printk("Handle ioctl event (cmd: %u)\n",cmd);
 
-
-
+    switch(cmd)
+    {
+        case LCD_CLEAR:
+        {
+			lcd_clearDisplay();
+            break;
+        }
+        case LCD_GOTOXY:
+        {
+            unsigned char position[2];
+            copy_from_user(position, (unsigned char *)arg, sizeof(position));
+            lcd_gotoxy(position[0], position[1]);
+            printk(KERN_INFO "Cursor go [%d][%d]\n", position[0],position[1]);
+            break;
+        }
+        case LCD_SET_BLINK:
+        {
+            unsigned char isBlinkEnable;
+            copy_from_user(&isBlinkEnable, (unsigned char *)arg, sizeof(isBlinkEnable));
+            lcd_set_blink(isBlinkEnable);
+            printk(KERN_INFO "Blink have been %s\n", (isBlinkEnable == ENABLE)?"enable":"disable");
+            break;
+        }
+        case LCD_SET_CURSOR:
+        {
+            unsigned char isCursorEnable;
+            copy_from_user(&isCursorEnable, (unsigned char *)arg, sizeof(isCursorEnable));
+            lcd_set_cursor(isCursorEnable);
+            printk(KERN_INFO "Blink have been %s\n", (isCursorEnable == ENABLE)?"enable":"disable");
+            break;
+        }
+    }
+    return ret;
+}
 
 /* file operation structure */
 static struct file_operations lcd_fops =
@@ -363,6 +453,7 @@ static struct file_operations lcd_fops =
 	.open  =  char_lcd_open,
 	.release = char_lcd_release,
 	.write   = char_lcd_write,
+	.unlocked_ioctl = char_lcd_ioctl,
 };
 
 /****************************OS Specific-END**************************/
@@ -408,11 +499,10 @@ static int __init lcd_driver_init(void)
 	/*add a character device to the system*/
 	if( cdev_add(lcd_driver.lcd_cdev, lcd_driver.dev_number, MINOR_NUM_COUNT) < 0 )
 	{
-		device_destroy( lcd_driver.lcd_class, lcd_driver.dev_number);
-		class_destroy(  lcd_driver.lcd_class );
-		unregister_chrdev_region( lcd_driver.dev_number, MINOR_NUM_COUNT );
+		device_destroy(lcd_driver.lcd_class, lcd_driver.dev_number);
+		class_destroy(lcd_driver.lcd_class );
+		unregister_chrdev_region(lcd_driver.dev_number, MINOR_NUM_COUNT);
 		printk( KERN_DEBUG "ERR: Failed to add cdev \n" );		
-
 		return -1;		
 	}
 
