@@ -25,11 +25,10 @@
 #define DRIVER_DESC "The character device driver for LCD 16x02 HD44780"
 // ********* Linux driver Constants ******************************************************************
 
-#define MINOR_NUM_START		0   // minor number starts from 0
-#define MINOR_NUM_COUNT		1   // the number of minor numbers required
+#define MINOR_NUM_START		0   /* minor number starts from 0 */
+#define MINOR_NUM_COUNT		1   /* the number of minor numbers required */
 
-/************************Data structure define***************************/
-/************************Device Structures*******************************/
+/************************Driver Structures*******************************/
 
 #define CLASS_NAME  	"class_lcd"
 #define DEVICE_NAME 	"lcd_1602"
@@ -51,21 +50,21 @@ static int lcd_pin_setup(unsigned int pin_number)
     int ret;
     PIN_DIRECTION gpio_direction = OUTPUT_PIN;
     
-    /*Request GPIO allocation */
+    /* Request GPIO allocation */
     ret = gpio_request(pin_number, "GPIO Pin Request");
     if(ret != 0)
     {
         printk(KERN_DEBUG "ERR: Failed to request gpio %d\n",pin_number);
         return ret;
     }
-    /*Set GPIO export & disallow user space to change direction of GPIO */
+    /* Set GPIO export & disallow user space to change direction of GPIO */
     ret = gpio_export(pin_number, 0);
     if(ret != 0)
     {
         printk(KERN_DEBUG "ERR: Failed to export gpio %d\n",pin_number);
         return ret;
     }
-    /*Set GPIO direction */
+    /* Set GPIO direction */
     ret = gpio_direction_output(pin_number, gpio_direction);
 	if(ret != 0)
     {
@@ -73,10 +72,10 @@ static int lcd_pin_setup(unsigned int pin_number)
         return ret;
     }   
 
-    /*Set init value of GPIO*/
+    /* Set init value of GPIO*/
     gpio_set_value(pin_number, 0);
 
-    /*return 0 if there is no error*/
+    /* Return 0 if there is no error*/
     return 0;
 }
 
@@ -148,9 +147,9 @@ static void lcd_send_command(char command)
 /******************LCD send data************************************/
 static void lcd_send_data(char data)
 {
-	/*Part 1.  Upper 4 bit data (from bit 7 to bit 4)*/
+	/* Part 1.  Upper 4 bit data (from bit 7 to bit 4)*/
 	lcd_nibble(data & 0xF0);
-	/*Part 1. Set to data mode*/
+	/* Part 1. Set to data mode*/
 	gpio_set_value(LCD_RS_PIN_NUMBER, RS_DATA_MODE);
 	usleep_range(5, 10);
 
@@ -171,7 +170,7 @@ static void lcd_send_data(char data)
 	gpio_set_value(LCD_EN_PIN_NUMBER, 0);	
 }
 /************************LCD init******************************/
-/*description: 	initialize the LCD in 4 bit mode as described on the HD44780 LCD controller document.*/
+/* Initialize the LCD in 4 bit mode as described on the HD44780 LCD controller document.*/
 static void lcd_initialize()
 {
 	usleep_range(41*1000, 50*1000);	// wait for more than 40 ms once the power is on
@@ -187,9 +186,9 @@ static void lcd_initialize()
 
 	lcd_send_command(0x20);		/* Instruction 0010b (Function set)*/ /*Set interface to be 4 bits long*/
 	
-    usleep_range(100, 200);     // wait for more than 100 us
+    usleep_range(100, 200);     /* wait for more than 100 us */
 
-    lcd_send_command(0x20); // Instruction 0010b (Function set)
+    lcd_send_command(0x20); /* Instruction 0010b (Function set) */
     lcd_send_command(0x80); /* Instruction NF**b
 					   Set N = 1, or 2-line display
 					   Set F = 0, or 5x8 dot character font*/
@@ -208,8 +207,8 @@ static void lcd_initialize()
     /* Entry mode set: Inc cursor to the right when writing, don't shift screen*/
     lcd_send_command(0x00); /* Instruction 0000b */
     lcd_send_command(0x60); /* Instruction 01(I/D)Sb -> 0110b
-					   Set I/D = 1, or increment or decrement DDRAM address by 1
-					   Set S = 0, or no display shift */
+					   			Set I/D = 1, or increment or decrement DDRAM address by 1
+					   			Set S = 0, or no display shift */
     usleep_range(100, 200);
 
     /* Initialization Completed, but set up default LCD setting here */
@@ -289,78 +288,85 @@ void lcd_setLine(unsigned int line)
 }
 
 /*************************LCD clean display*********************************/
-static void lcd_clearDisplay()
+static void lcd_clearDisplay(void)
 {
     /*Send 0x01 command*/
-	lcd_send_command( 0x00 ); /*upper 4 bits of command - 0000b */
-	lcd_send_command( 0x10 ); /*lower 4 bits of command - 0001b */  
+	lcd_send_command( 0x00 ); /* upper 4 bits of command - 0000b */
+	lcd_send_command( 0x10 ); /* lower 4 bits of command - 0001b */  
+
+	printk(KERN_INFO "LCD Driver: display clear\n");
+}
+/*************************LCD scroll left*********************************/
+static void lcd_scroll_left(void)
+{
+	unsigned char command = LCD_SHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT;
+	lcd_send_command(command & 0xF0); 	  /* upper 4 bits of command */
+	lcd_send_command((command & 0x0F) << 4); /* lower 4 bits of command */
+
+	printk(KERN_INFO "LCD Driver: display clear\n");
+}
+/*************************LCD scroll right*********************************/
+static void lcd_scroll_right(void)
+{
+	unsigned char command = LCD_SHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT;
+	lcd_send_command(command & 0xF0); 	  /* upper 4 bits of command */
+	lcd_send_command((command & 0x0F) << 4); /* lower 4 bits of command */
 
 	printk(KERN_INFO "LCD Driver: display clear\n");
 }
 /************************LCD Set cursor to position (x,y)*********************/
-static void lcd_gotoxy(unsigned char x, unsigned char y)
+static void lcd_gotoxy(axis_t *position)
 {
 	char command;
 
-	if(1 == x){
-		command = 0x80 + (char) y;
+	if(1 == position->x){
+		command = 0x80 + position->y;
 		
-		lcd_send_command(command & 0xF0); 	  // upper 4 bits of command
-		lcd_send_command((command & 0x0F) << 4); // lower 4 bits of command 
+		lcd_send_command(command & 0xF0); 	  /* upper 4 bits of command */
+		lcd_send_command((command & 0x0F) << 4); /* lower 4 bits of command */
 	}
-	else if(2 == x){
-		command = 0xC0 + (char) y;
+	else if(2 == position->x){
+		command = 0xC0 + position->y;
 
-		lcd_send_command(command & 0xF0); 	  // upper 4 bits of command
-		lcd_send_command((command & 0x0F) << 4 ); // lower 4 bits of command
+		lcd_send_command(command & 0xF0); 	  /* upper 4 bits of command */
+		lcd_send_command((command & 0x0F) << 4 ); /* lower 4 bits of command */
 	}
 	else{
 		printk("ERR: Invalid line number. Select either 1 or 2 \n");
 	}	
 }
-/**********************LCD Set ON/OFF Blink********************************/
-static void lcd_set_blink(unsigned char status)
+/**********************LCD Set ON/OFF Display/Cursor/Blink********************************/
+static void lcd_set_display(display_control_t *display_option)
 {
 	/* Display On/off Control */
-	/* Instruction 1DCBb  */
+	/* Instruction 1DCBb  - COMMAND CONTROL DISPLAY 0x08*/
 	/* Set D= 1, or Display on
 	   Set C= 1, or Cursor on
 	   Set B= 1, or Blinking on
 	*/
-	lcd_send_command(0x00);		/* Command 0000b */
-	if(0 == status)
-	{
-		lcd_send_command(0xE0); /* Command 1110b */ 
-	}
-	else if(1 == status)
-	{
-		lcd_send_command(0xF0); /* Command 1111b */
-	}
-	else{
-		printk("ERR: Invalid status. Select either 0 or 1 \n");
-	}	
+	unsigned char command = 0;
+	command = LCD_DISPLAYCONTROL \
+	          | (display_option->display ? LCD_DISPLAYON : LCD_DISPLAYOFF) \
+			  | (display_option->cursor ? LCD_CURSORON  : LCD_CURSOROFF) \
+			  | (display_option->blink ? LCD_BLINKON   : LCD_BLINKOFF);
+
+	lcd_send_command(command & 0xF0);		  /* 4 Upper bit*/
+	lcd_send_command((command & 0x0F) << 4 ); /* 4 Lower bit - contain display config */
 }
-/*********************LCD visible cursor***********************************/
-static void lcd_set_cursor(unsigned char status)
+/**********************LCD Upload custom character to CGRAM********************************/
+static void lcd_create_char(custom_char_t *custom_chr)
 {
-	/* Display On/off Control */
-	/* Instruction 1DCBb  */
-	/* Set D= 1, or Display on
-	   Set C= 1, or Cursor on
-	   Set B= 1, or Blinking on
-	*/
-	lcd_send_command(0x00);		/* Command 0000b */
-	if(0 == status)
+	unsigned char command = 0x00, i;
+	command = LCD_SETCGRAMADDR | ((custom_chr->location & 0x07) << 3); /* = LCD_SETCGRAMADDR + (location*8) => 5x8 character */
+	lcd_send_command(command & 0xF0);		  /* 4 Upper bit */
+	lcd_send_command((command & 0x0F) << 4 ); /* 4 Lower bit */
+	usleep_range(60, 100);
+	for(i = 0; i < 8; i++)
 	{
-		lcd_send_command(0xD0); /* Command 1101b */ 
+		lcd_send_data(custom_chr->charmap[i]);
+		usleep_range(60, 100);
 	}
-	else if(1 == status)
-	{
-		lcd_send_command(0xF0); /* Command 1111b */
-	}
-	else{
-		printk("ERR: Invalid status. Select either 0 or 1 \n");
-	}	
+	lcd_clearDisplay();
 }
 /****************************Device Specific-END**************************/
 
@@ -405,7 +411,7 @@ static ssize_t char_lcd_write(struct file *filp, const char __user *user_buf, si
 	printk(KERN_INFO "LCD Driver: write()\n");
     return len;
 }
-/****Function ioctl entry point*****/
+/**************************Function ioctl entry point********************************/
 static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
     int ret = 0;
@@ -420,28 +426,69 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
         }
         case LCD_GOTOXY:
         {
-            unsigned char position[2];
-            copy_from_user(position, (unsigned char *)arg, sizeof(position));
-            lcd_gotoxy(position[0], position[1]);
-            printk(KERN_INFO "Cursor go [%d][%d]\n", position[0],position[1]);
+            axis_t position;
+			if (copy_from_user(&position, (axis_t *)arg, sizeof(position)))
+			{
+				printk(KERN_DEBUG "ERR: Failed to copy from user space buffer \n");
+				return -EFAULT;
+			}
+            lcd_gotoxy(&position);
+            printk(KERN_INFO "Cursor go [%d][%d]\n", position.x,position.y);
             break;
         }
-        case LCD_SET_BLINK:
+        case LCD_SET_DISPLAY:
         {
-            unsigned char isBlinkEnable;
-            copy_from_user(&isBlinkEnable, (unsigned char *)arg, sizeof(isBlinkEnable));
-            lcd_set_blink(isBlinkEnable);
-            printk(KERN_INFO "Blink have been %s\n", (isBlinkEnable == ENABLE)?"enable":"disable");
+            display_control_t display;
+			if (copy_from_user(&display, (display_control_t *)arg, sizeof(display)))
+			{
+				printk(KERN_DEBUG "ERR: Failed to copy from user space buffer \n");
+				return -EFAULT;
+			}			
+            lcd_set_display(&display);
+            printk(KERN_INFO "Control display: Display [%s], Cursor [%s], Blink [%s]\n", 
+							(display.display)?"enable":"disable",
+							(display.cursor)?"enable":"disable",
+							(display.blink)?"enable":"disable");
             break;
         }
-        case LCD_SET_CURSOR:
+        case LCD_PUT_CHAR:
         {
-            unsigned char isCursorEnable;
-            copy_from_user(&isCursorEnable, (unsigned char *)arg, sizeof(isCursorEnable));
-            lcd_set_cursor(isCursorEnable);
-            printk(KERN_INFO "Blink have been %s\n", (isCursorEnable == ENABLE)?"enable":"disable");
+            unsigned char character;
+			if (copy_from_user(&character, (unsigned char *)arg, sizeof(character)))
+			{
+				printk(KERN_DEBUG "ERR: Failed to copy from user space buffer \n");
+				return -EFAULT;
+			}				
+            lcd_send_data(character);
+            printk(KERN_INFO "Put character: %c\n", character);
             break;
         }
+		case LCD_SCROLL_LEFT:
+		{
+			lcd_scroll_left();
+			break;
+		}
+		case LCD_SCROLL_RIGHT:
+		{
+			lcd_scroll_right();
+			break;
+		}		
+		case LCD_UPLOAD_CUSTOM_CHAR:
+		{
+			custom_char_t custom_chr;
+			if (copy_from_user(&custom_chr, (custom_char_t *)arg, sizeof(custom_chr)))
+			{
+				printk(KERN_DEBUG "ERR: Failed to copy from user space buffer \n");
+				return -EFAULT;
+			}				
+			lcd_create_char(&custom_chr);
+			break;
+		}
+		case LCD_INIT:
+		{
+			lcd_initialize();
+			break;
+		}
     }
     return ret;
 }
@@ -462,14 +509,14 @@ static struct file_operations lcd_fops =
 static int __init lcd_driver_init(void)
 {
 
-	// dynamically allocate device major number
+	/* dynamically allocate device major number */
 	if( alloc_chrdev_region( &lcd_driver.dev_number, MINOR_NUM_START , MINOR_NUM_COUNT , DEVICE_NAME ) < 0) 
 	{
 		printk( KERN_DEBUG "ERR: Failed to allocate major number \n" );
 		return -1;
 	}
 
-	// create a class structure
+	/* create a class structure */
 	lcd_driver.lcd_class = class_create(THIS_MODULE, CLASS_NAME );
 	
 	if( IS_ERR(lcd_driver.lcd_class) )
@@ -480,7 +527,7 @@ static int __init lcd_driver_init(void)
 		return PTR_ERR( lcd_driver.lcd_class ) ;
 	}
 			
-	// create a device and registers it with sysfs
+	/* create a device and registers it with sysfs */
 	lcd_driver.dev = device_create( lcd_driver.lcd_class, NULL, lcd_driver.dev_number, NULL, DEVICE_NAME );
 	
 	if( IS_ERR(lcd_driver.dev) )
@@ -492,11 +539,11 @@ static int __init lcd_driver_init(void)
 		return PTR_ERR( lcd_driver.dev );
 	}
 
-	/*initialize a cdev structure*/
+	/* initialize a cdev structure */
 	lcd_driver.lcd_cdev = cdev_alloc();
 	cdev_init(lcd_driver.lcd_cdev, &lcd_fops);
 
-	/*add a character device to the system*/
+	/* add a character device to the system */
 	if( cdev_add(lcd_driver.lcd_cdev, lcd_driver.dev_number, MINOR_NUM_COUNT) < 0 )
 	{
 		device_destroy(lcd_driver.lcd_class, lcd_driver.dev_number);

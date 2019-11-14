@@ -15,15 +15,15 @@
 #define LCD_RETURNHOME     0x02
 #define LCD_ENTRYMODESET   0x04
 #define LCD_DISPLAYCONTROL 0x08
-#define LCD_CURSORSHIFT    0x10
+#define LCD_SHIFT    	   0x10
 #define LCD_FUNCTIONSET    0x20
 #define LCD_SETCGRAMADDR   0x40
 #define LCD_SETDDRAMADDR   0x80
 
-#define LCD_ENTRYRIGHT          0x00
-#define LCD_ENTRYLEFT           0x02
-#define LCD_ENTRYSHIFTINCREMENT 0x01
-#define LCD_ENTRYSHIFTDECREMENT 0x00
+#define LCD_DISPLAYMOVE 0x08
+#define LCD_CURSORMOVE  0x00
+#define LCD_MOVERIGHT   0x04
+#define LCD_MOVELEFT    0x00
 
 #define LCD_DISPLAYON  0x04
 #define LCD_DISPLAYOFF 0x00
@@ -61,11 +61,35 @@ typedef enum pin_dir
 
 /******************Define IOCTL Command ********************/
 #define MAGICAL_NUMBER 248
-#define LCD_CLEAR  					_IO(MAGICAL_NUMBER, 0)
-#define LCD_GOTOXY 					_IOW(MAGICAL_NUMBER, 1, unsigned char *)
-#define LCD_SET_BLINK  				_IOW(MAGICAL_NUMBER, 2, unsigned char *)
-#define LCD_SET_CURSOR  			_IOW(MAGICAL_NUMBER, 3, unsigned char *)
-#define LCD_SET_DISPLAY  			_IOW(MAGICAL_NUMBER, 4, unsigned char *)
+#define LCD_CLEAR  					 _IO(MAGICAL_NUMBER, 0)
+#define LCD_GOTOXY 					_IOW(MAGICAL_NUMBER, 1, axis_t *)
+#define LCD_SET_DISPLAY  			_IOW(MAGICAL_NUMBER, 2, display_control_t *)
+#define LCD_PUT_CHAR  				_IOW(MAGICAL_NUMBER, 3, unsigned char *)
+#define LCD_SCROLL_LEFT  			 _IO(MAGICAL_NUMBER, 4)
+#define LCD_SCROLL_RIGHT  			 _IO(MAGICAL_NUMBER, 5)
+#define LCD_UPLOAD_CUSTOM_CHAR      _IOW(MAGICAL_NUMBER, 6, custom_char_t *)
+#define LCD_INIT      				 _IO(MAGICAL_NUMBER, 7)
+
+/**********************Data Structure***********************/
+typedef struct custom_chr 
+{
+    unsigned char location;
+    unsigned char *charmap;
+}custom_char_t;
+
+typedef struct axis 
+{
+	unsigned char x;
+	unsigned char y;
+}axis_t;
+
+typedef struct display_control 
+{
+	unsigned char display;
+	unsigned char cursor;
+	unsigned char blink;
+}display_control_t;
+
 /******************Function Prototype**********************/
 
 static int  lcd_pin_setup(unsigned int pin_number);
@@ -81,10 +105,16 @@ static int  lcd_print(char * msg, unsigned int lineNumber);
 static void lcd_clearDisplay(void);
 static void lcd_setLine(unsigned int line);
 
-/*Set cursor goto line x, column y*/
-static void lcd_gotoxy(unsigned char x, unsigned char y);
-/*Set ON/OFF Blink*/
-static void lcd_set_blink(unsigned char status); 
-/*Set ON/OFF Cursor*/
-static void lcd_set_cursor(unsigned char status); 
+/* Set cursor goto line x, column y*/
+static void lcd_gotoxy(axis_t *position);
+
+/* Set ON/OFF Display/Cursor/Blink*/
+static void lcd_set_display(display_control_t *display_option); 
+/* Scroll to left*/
+static void lcd_scroll_left(void);
+/* Scroll to right*/
+static void lcd_scroll_right(void);
+/* Upload custom character to CGRAM ((Character Generator RAM) */
+/* Only have 8 byte for custom character, location 0-7 */
+static void lcd_create_char(custom_char_t *custom_chr);
 #endif /*_LCD_DRIVER_H_*/
