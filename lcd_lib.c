@@ -33,17 +33,18 @@ void lcd_clear_display(void)
 
 void lcd_goto_xy(unsigned char x, unsigned char y)
 {
-    axis_t location;
+    coordinate_t location;
     location.x = x;
     location.y = y;
     int fd = lcd_open_dev();
+    printf("Library: Cursor goto: %d, %d\n", location.x, location.y);
     ioctl(fd, GOTO_XY, &location);
     lcd_close_dev(fd);
 }
 
 void lcd_set_display(unsigned char display, unsigned char cursor, unsigned char blink)
 {
-    display_control_t control;
+    control_display_t control;
     control.display = display;
     control.cursor = cursor;
     control.blink = blink;
@@ -54,7 +55,7 @@ void lcd_set_display(unsigned char display, unsigned char cursor, unsigned char 
 
 void lcd_upload_custom_char(unsigned char location, unsigned char *charmap)
 {
-    custom_char_t custom_char;
+    custom_character_t custom_char;
     custom_char.location = location;
     custom_char.charmap = charmap;
     int fd = lcd_open_dev();

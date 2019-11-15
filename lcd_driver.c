@@ -432,8 +432,9 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 				printk(KERN_DEBUG "ERR: Failed to copy from user space buffer \n");
 				return -EFAULT;
 			}
+			printk(KERN_INFO "Cursor go [%d][%d]\n", position.x,position.y);
             lcd_gotoxy(&position);
-            printk(KERN_INFO "Cursor go [%d][%d]\n", position.x,position.y);
+            printk(KERN_INFO "After call lcd_gotoxy [%d][%d]\n", position.x,position.y);
             break;
         }
         case LCD_SET_DISPLAY:
@@ -463,7 +464,7 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
             printk(KERN_INFO "Put character: %c\n", character);
             break;
         }
-		case LCD_SCROLL_LEFT:
+		case LCD_SCROLL_LEFT:  
 		{
 			lcd_scroll_left();
 			break;

@@ -66,23 +66,23 @@ void write_data_chardev()
 
 void goto_xy(void)
 {
-    unsigned char x, y;
-    printf("\nEnter position (line, column): ");
+    unsigned int x, y;
+    printf("\nEnter position (line,column): ");
     scanf(" %d %d", &x, &y);
     lcd_goto_xy(x,y);
 
 }
 void set_display(void)
 {
-    unsigned char display, cursor, blink;
+    unsigned int display, cursor, blink;
     printf("\nEnter your choice [display-cursor-blink] : ");
-    scanf(" %d %d %d", (unsigned char *)&display, (unsigned char *)&cursor, (unsigned char *)&blink);
+    scanf("%d %d %d", &display, &cursor, &blink);
     lcd_set_display(display,cursor,blink);
 }
 void upload_custom_char(void)
 {
     int i;
-    unsigned char location;
+    unsigned int location;
     unsigned char *map = NULL;
     printf("\nEnter custom character type [0-7] ([x]: address [x], type[x]): ");
     scanf(" %d", &location);
@@ -97,9 +97,9 @@ void put_char()
 }
 void put_custom_char()
 {
-    unsigned char num;
+    unsigned int num;
     printf("\nEnter location of character [0-7] : ");
-    scanf(" %d", (unsigned char *)&num);
+    scanf(" %d", &num);
     lcd_put_char(num);
 }
 void put_string()

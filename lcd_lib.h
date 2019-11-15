@@ -20,34 +20,34 @@
 /*********************GPIO Configure************************/
 
 /**********************Data Structure***********************/
-typedef struct custom_chr 
+typedef struct _custom_char 
 {
     unsigned char location;
     unsigned char *charmap;
-}custom_char_t;
+}custom_character_t;
 
-typedef struct axis 
+typedef struct _coordinate 
 {
 	unsigned char x;
 	unsigned char y;
-}axis_t;
+}coordinate_t;
 
-typedef struct display_control 
+typedef struct _display_control 
 {
 	unsigned char display;
 	unsigned char cursor;
 	unsigned char blink;
-}display_control_t;
+}control_display_t;
 
 /* Define command for IOCTL*/
 #define MAGICAL_NUM 248
 #define CLEAR_DISPLAY            _IO(MAGICAL_NUM, 0)
-#define GOTO_XY                 _IOW(MAGICAL_NUM, 1, axis_t *)
-#define SET_DISPLAY             _IOW(MAGICAL_NUM, 2, display_control_t *)
+#define GOTO_XY                 _IOW(MAGICAL_NUM, 1, coordinate_t *)
+#define SET_DISPLAY             _IOW(MAGICAL_NUM, 2, control_display_t *)
 #define PUT_CHAR                _IOW(MAGICAL_NUM, 3, unsigned char *)
 #define SCROLL_LEFT  			 _IO(MAGICAL_NUM, 4)
 #define SCROLL_RIGHT  			 _IO(MAGICAL_NUM, 5)
-#define UPLOAD_CUSTOM_CHAR      _IOW(MAGICAL_NUM, 6, custom_char_t *)
+#define UPLOAD_CUSTOM_CHAR      _IOW(MAGICAL_NUM, 6, custom_character_t *)
 #define INIT_LCD                 _IO(MAGICAL_NUM, 7)
 
 
