@@ -20,6 +20,11 @@
 #define LCD_SETCGRAMADDR   0x40
 #define LCD_SETDDRAMADDR   0x80
 
+#define LCD_ENTRYRIGHT          0x00
+#define LCD_ENTRYLEFT           0x02
+#define LCD_ENTRYSHIFTINCREMENT 0x01
+#define LCD_ENTRYSHIFTDECREMENT 0x00
+
 #define LCD_DISPLAYMOVE 0x08
 #define LCD_CURSORMOVE  0x00
 #define LCD_MOVERIGHT   0x04
@@ -69,6 +74,7 @@ typedef enum pin_dir
 #define LCD_SCROLL_RIGHT  			 _IO(MAGICAL_NUMBER, 5)
 #define LCD_UPLOAD_CUSTOM_CHAR      _IOW(MAGICAL_NUMBER, 6, custom_char_t *)
 #define LCD_INIT      				 _IO(MAGICAL_NUMBER, 7)
+#define LCD_SET_AUTOSCROLL          _IOW(MAGICAL_NUMBER, 8, unsigned char *)
 
 /**********************Data Structure***********************/
 typedef struct custom_chr 
@@ -117,4 +123,7 @@ static void lcd_scroll_right(void);
 /* Upload custom character to CGRAM ((Character Generator RAM) */
 /* Only have 8 byte for custom character, location 0-7 */
 static void lcd_create_char(custom_char_t *custom_chr);
+
+/* Set auto scroll- moves all the text one space to the left each time a letter is added*/
+static void lcd_set_autoscroll(unsigned char status);
 #endif /*_LCD_DRIVER_H_*/

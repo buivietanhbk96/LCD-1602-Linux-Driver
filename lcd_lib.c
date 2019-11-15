@@ -108,3 +108,16 @@ void lcd_put_string_super(unsigned char *str)
     write(fd, str, strlen(str)+ 1); /* Print string to screen */
     lcd_close_dev(fd);    
 }
+
+int lcd_set_auto_scroll(unsigned char status)
+{   
+    /* Check Check the correctness of the parameter */
+    if((ENABLE != status) && (DISABLE != status))
+    {
+        return -1;
+    }
+    int fd = lcd_open_dev();
+    ioctl(fd, SET_AUTOSCROLL, &status);
+    lcd_close_dev(fd);    
+    return 0;
+}

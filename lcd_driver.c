@@ -368,6 +368,25 @@ static void lcd_create_char(custom_char_t *custom_chr)
 	}
 	lcd_clearDisplay();
 }
+static void lcd_set_autoscroll(unsigned char status)
+{
+	unsigned char command = 0x00;
+	if(ENABLE == status)
+	{
+		command = LCD_ENTRYMODESET | LCD_ENTRYSHIFTINCREMENT | LCD_ENTRYLEFT;
+	}
+	else if (DISABLE == status)
+	{
+		command = LCD_ENTRYMODESET & (~LCD_ENTRYSHIFTINCREMENT) & (~LCD_ENTRYLEFT);
+	}
+	else
+	{
+		printk(KERN_DEBUG "Invalid status to set Enable/Disable autoscroll\n");
+		return;
+	}
+	lcd_send_command(command & 0xF0);		  /* 4 Upper bit */
+	lcd_send_command((command & 0x0F) << 4 ); /* 4 Lower bit */
+}
 /****************************Device Specific-END**************************/
 
 /****************************OS Specific-START************************/
@@ -490,6 +509,18 @@ static long char_lcd_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 			lcd_initialize();
 			break;
 		}
+        case LCD_SET_AUTOSCROLL:
+        {
+            unsigned char status;
+			if (copy_from_user(&status, (unsigned char *)arg, sizeof(status)))
+			{
+				printk(KERN_DEBUG "ERR: Failed to copy from user space buffer \n");
+				return -EFAULT;
+			}				
+            lcd_set_autoscroll(status);
+            printk(KERN_INFO "%s auto scroll\n", (ENABLE == status)?"Enable":"Disable");
+            break;		
+		}
     }
     return ret;
 }
@@ -505,7 +536,6 @@ static struct file_operations lcd_fops =
 };
 
 /****************************OS Specific-END**************************/
-
 
 static int __init lcd_driver_init(void)
 {

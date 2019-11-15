@@ -17,6 +17,8 @@
 #define DEVICE_NODE "/dev/lcd_1602"
 #define NUM_CHAR_PER_LINE 16
 #define NUM_LINE 2
+#define ENABLE 1
+#define DISABLE 0
 /*********************GPIO Configure************************/
 
 /**********************Data Structure***********************/
@@ -49,7 +51,7 @@ typedef struct _display_control
 #define SCROLL_RIGHT  			 _IO(MAGICAL_NUM, 5)
 #define UPLOAD_CUSTOM_CHAR      _IOW(MAGICAL_NUM, 6, custom_character_t *)
 #define INIT_LCD                 _IO(MAGICAL_NUM, 7)
-
+#define SET_AUTOSCROLL          _IOW(MAGICAL_NUM, 8, unsigned char *)
 
 /**********************Function Prototype ***********************/
 
@@ -137,4 +139,11 @@ void lcd_put_string(unsigned char *str);
  * @return void
  */
 void lcd_put_string_super(unsigned char *str);
+/**
+ * @brief Set enable or disable auto scroll
+ * Moves all the text one space to the left each time a letter is added
+ * @param status status (enable = ENABLE, disable = DISABLE)
+ * @return void
+ */
+int lcd_set_auto_scroll(unsigned char status);
 #endif /*_LCD_LIB_H_*/

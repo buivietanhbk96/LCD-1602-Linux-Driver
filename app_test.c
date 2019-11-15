@@ -11,14 +11,14 @@
 
 /**************************Define Custom Character***********************/
 
-unsigned char type0[8] = {  /* Arrow */
+unsigned char type0[8] = {  /* Arrow Up */
   0x04,
   0x0E,
   0x15,
   0x04,
   0x04,
   0x04,
-  0x00,
+  0x04,
   0x00
 };
 unsigned char type1[8] = { /* Face */
@@ -52,8 +52,48 @@ unsigned char type3[8] = { /* Music*/
   0x18,
   0x18
 };
+unsigned char type4[8] = {  /* Arrow down */
+  0x04,
+  0x04,
+  0x04,
+  0x04,
+  0x15,
+  0x0E,
+  0x04,
+  0x00
+};
+unsigned char type5[8] = { /* Smile */
+  0x00,
+  0x00,
+  0x0A,
+  0x00,
+  0x11,
+  0x0E,
+  0x00,
+  0x00
+};
+unsigned char type6[8] = { /* Sad*/
+  0x00,
+  0x00,
+  0x0A,
+  0x00,
+  0x0E,
+  0x11,
+  0x00,
+  0x00
+};
 
-unsigned char *type[4] = {type0, type1,type2,type3};
+unsigned char type7[8] = { /* Bell*/
+  0x00,
+  0x04,
+  0x0E,
+  0x0E,
+  0x1F,
+  0x1F,
+  0x04,
+  0x00
+};
+unsigned char *type[8] = {type0, type1,type2,type3,type4,type5, type6, type7};
 
 /*Ham kiem tra entry point write cua vchar driver*/
 void write_data_chardev()
@@ -95,6 +135,13 @@ void put_char()
     scanf(" %c", &chr);
     lcd_put_char(chr);
 }
+void set_autoscroll()
+{
+    unsigned int status;
+    printf("\nEnter status (1: en, 0:dis) : ");
+    scanf(" %d", &status);
+    lcd_set_auto_scroll(status);
+}
 void put_custom_char()
 {
     unsigned int num;
@@ -135,6 +182,8 @@ int main()
     printf("\tL (to scroll left)\n");
 
     printf("\tR (to scroll right)\n");
+
+    printf("\tA (to enable/disable autoscroll)\n");
 
     printf("\tq (to quit the application)\n");
     while(1)
@@ -181,7 +230,11 @@ int main()
             /* Scroll right */   
             case 'R':
                 lcd_scroll_right();
-                break;                              
+                break;              
+            /* Set enable/disable autoscroll*/        
+            case 'A':
+                set_autoscroll();
+                break;                        
             /* Quit TEST APPLICATION */
             case 'q':
                 if(fd > -1)
