@@ -19,5 +19,5 @@ This is a kernel level Linux Device driver to control a 16x2 character LCD (with
 | __void _lcd_scroll_left_(void)__ | __scroll text to left__ |
 | __void _lcd_scroll_right_(void)__ | __scroll 2 line text to right__ |
 | __void _lcd_set_display_(unsigned char display, unsigned char cursor, unsigned char blink)__ | __Set cursor to home position__ |
-| __void _lcd_upload_custom_char(unsigned char location, unsigned char *charmap)__ | __Upload data for custom char to CGRAM__ |
-| __void _lcd_set_auto_scroll(unsigned char status)__ | __Set enable or disable auto move all the text one space to the left each time a letter is added__ |
+| __void _lcd_upload_custom_char_(unsigned char location, unsigned char *charmap)__ | __Upload data for custom char to CGRAM__ |
+| __void _lcd_set_auto_scroll_(unsigned char status)__ | __Set enable or disable auto move all the text one space to the left each time a letter is added__ |
