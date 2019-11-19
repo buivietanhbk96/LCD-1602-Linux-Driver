@@ -66,15 +66,15 @@ typedef enum pin_dir
 
 /******************Define IOCTL Command ********************/
 #define MAGICAL_NUMBER 248
-#define LCD_CLEAR  					 _IO(MAGICAL_NUMBER, 0)
+#define LCD_CLEAR					_IO(MAGICAL_NUMBER, 0)
 #define LCD_GOTOXY 					_IOW(MAGICAL_NUMBER, 1, axis_t *)
-#define LCD_SET_DISPLAY  			_IOW(MAGICAL_NUMBER, 2, display_control_t *)
-#define LCD_PUT_CHAR  				_IOW(MAGICAL_NUMBER, 3, unsigned char *)
-#define LCD_SCROLL_LEFT  			 _IO(MAGICAL_NUMBER, 4)
-#define LCD_SCROLL_RIGHT  			 _IO(MAGICAL_NUMBER, 5)
-#define LCD_UPLOAD_CUSTOM_CHAR      _IOW(MAGICAL_NUMBER, 6, custom_char_t *)
-#define LCD_INIT      				 _IO(MAGICAL_NUMBER, 7)
-#define LCD_SET_AUTOSCROLL          _IOW(MAGICAL_NUMBER, 8, unsigned char *)
+#define LCD_SET_DISPLAY 			_IOW(MAGICAL_NUMBER, 2, display_control_t *)
+#define LCD_PUT_CHAR 				_IOW(MAGICAL_NUMBER, 3, unsigned char *)
+#define LCD_SCROLL_LEFT 			_IO(MAGICAL_NUMBER, 4)
+#define LCD_SCROLL_RIGHT 			_IO(MAGICAL_NUMBER, 5)
+#define LCD_UPLOAD_CUSTOM_CHAR 		_IOW(MAGICAL_NUMBER, 6, custom_char_t *)
+#define LCD_INIT 					_IO(MAGICAL_NUMBER, 7)
+#define LCD_SET_AUTOSCROLL 			_IOW(MAGICAL_NUMBER, 8, unsigned char *)
 
 /**********************Data Structure***********************/
 typedef struct custom_chr 

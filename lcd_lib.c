@@ -37,7 +37,7 @@ void lcd_goto_xy(unsigned char x, unsigned char y)
     location.x = x;
     location.y = y;
     int fd = lcd_open_dev();
-    printf("Library: Cursor goto: %d, %d\n", location.x, location.y);
+    /* printf("Library: Cursor goto: %d, %d\n", location.x, location.y); */
     ioctl(fd, GOTO_XY, &location);
     lcd_close_dev(fd);
 }
